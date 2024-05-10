@@ -20,7 +20,15 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
-    await client.connect();
+    const database = client.db("Volunize-Hub");
+    const volunteerPostCollection = database.collection("volunteer-post");
+    const craftCategoriesCollection = database.collection("craft-categories");
+
+    app.post("/post", async (req, res) => {
+      const post = req.body;
+      const result = await volunteerPostCollection.insertOne(post);
+      res.send(result);
+    });
   } finally {
   }
 }
