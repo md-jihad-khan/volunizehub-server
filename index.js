@@ -45,6 +45,7 @@ async function run() {
     const database = client.db("Volunize-Hub");
     const volunteerPostCollection = database.collection("volunteer-post");
     const craftCategoriesCollection = database.collection("craft-categories");
+
     // auth api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -62,7 +63,28 @@ async function run() {
       res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
 
-    app.post("/post", async (req, res) => {
+    // volunteer need api
+    app.get("/posts", async (req, res) => {
+      const cursor = volunteerPostCollection
+        .find()
+        .sort({ deadline: 1 })
+        .limit(6);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/post/:id", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await volunteerPostCollection.findOne(query);
+      res.send(result);
+    });
+    app.post("/post", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const post = req.body;
       const result = await volunteerPostCollection.insertOne(post);
       res.send(result);
