@@ -109,7 +109,6 @@ async function run() {
       }
       const id = req.params.id;
       const post = req.body;
-
       const filter = { _id: new ObjectId(id) };
       const updatedPost = {
         $set: {
@@ -128,6 +127,16 @@ async function run() {
         filter,
         updatedPost
       );
+      res.send(result);
+    });
+    // delete post
+    app.delete("/post/:id", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const id = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await volunteerPostCollection.deleteOne(query);
       res.send(result);
     });
   } finally {
