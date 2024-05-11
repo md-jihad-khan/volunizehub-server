@@ -72,6 +72,18 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    // users post
+    app.get("/post", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const email = req.query.email;
+      const query = { organizer_Email: email };
+      const cursor = volunteerPostCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // get the single data
     app.get("/post/:id", verifyToken, async (req, res) => {
       if (req.user.email !== req.query.email) {
         return res.status(403).send({ message: "forbidden access" });
@@ -81,12 +93,41 @@ async function run() {
       const result = await volunteerPostCollection.findOne(query);
       res.send(result);
     });
+    // add post
     app.post("/post", verifyToken, async (req, res) => {
       if (req.user.email !== req.query.email) {
         return res.status(403).send({ message: "forbidden access" });
       }
       const post = req.body;
       const result = await volunteerPostCollection.insertOne(post);
+      res.send(result);
+    });
+    // update post
+    app.put("/post/:id", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const id = req.params.id;
+      const post = req.body;
+
+      const filter = { _id: new ObjectId(id) };
+      const updatedPost = {
+        $set: {
+          title: post.title,
+          category: post.category,
+          location: post.location,
+          numberOfVolunteer: post.numberOfVolunteer,
+          photo_url: post.photo_url,
+          description: post.description,
+          deadline: post.deadline,
+          organizer_Email: post.organizer_Email,
+          organizer_Name: post.organizer_Name,
+        },
+      };
+      const result = await volunteerPostCollection.updateOne(
+        filter,
+        updatedPost
+      );
       res.send(result);
     });
   } finally {
