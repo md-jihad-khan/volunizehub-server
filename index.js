@@ -72,6 +72,12 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    // all volunteer need post api
+    app.get("/allPosts", async (req, res) => {
+      const cursor = volunteerPostCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
     // users post
     app.get("/post", verifyToken, async (req, res) => {
       if (req.user.email !== req.query.email) {
