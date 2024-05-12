@@ -44,7 +44,7 @@ async function run() {
   try {
     const database = client.db("Volunize-Hub");
     const volunteerPostCollection = database.collection("volunteer-post");
-    const craftCategoriesCollection = database.collection("craft-categories");
+    const volunteerRequestCollection = database.collection("volunteer-request");
 
     // auth api
     app.post("/jwt", async (req, res) => {
@@ -78,7 +78,7 @@ async function run() {
       let query = {
         title: { $regex: search, $options: "i" },
       };
-      const cursor = volunteerPostCollection.find(query);
+      const cursor = volunteerPostCollection.find(query).sort({ deadline: 1 });
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -110,6 +110,34 @@ async function run() {
       }
       const post = req.body;
       const result = await volunteerPostCollection.insertOne(post);
+      res.send(result);
+    });
+    // add volunteer request
+    app.post("/request", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const requestData = req.body;
+      const query = {
+        volunteer_email: requestData.volunteer_email,
+        postId: requestData.postId,
+      };
+
+      const alreadyApplied = await volunteerRequestCollection.findOne(query);
+      if (alreadyApplied) {
+        return res.send("You have already placed a request on this post");
+      }
+
+      const result = await volunteerRequestCollection.insertOne(requestData);
+
+      const updateDoc = {
+        $inc: { numberOfVolunteer: -1 },
+      };
+      const requestQuery = { _id: new ObjectId(requestData.postId) };
+      const updatePost = await volunteerPostCollection.updateOne(
+        requestQuery,
+        updateDoc
+      );
       res.send(result);
     });
     // update post
