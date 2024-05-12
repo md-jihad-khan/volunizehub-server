@@ -74,7 +74,11 @@ async function run() {
     });
     // all volunteer need post api
     app.get("/allPosts", async (req, res) => {
-      const cursor = volunteerPostCollection.find();
+      const search = req.query.search;
+      let query = {
+        title: { $regex: search, $options: "i" },
+      };
+      const cursor = volunteerPostCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
