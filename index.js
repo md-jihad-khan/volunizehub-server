@@ -82,7 +82,7 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
-    // users post
+    // getting users post
     app.get("/post", verifyToken, async (req, res) => {
       if (req.user.email !== req.query.email) {
         return res.status(403).send({ message: "forbidden access" });
@@ -103,6 +103,20 @@ async function run() {
       const result = await volunteerPostCollection.findOne(query);
       res.send(result);
     });
+    // get the volunteer request
+    app.get("/allRequest", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const email = req.query.email;
+      const query = {
+        volunteer_email: email,
+      };
+      const cursor = volunteerRequestCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // add post
     app.post("/post", verifyToken, async (req, res) => {
       if (req.user.email !== req.query.email) {
@@ -175,6 +189,26 @@ async function run() {
       const id = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await volunteerPostCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // delete request
+    app.delete("/request/:id", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+
+      const updateDoc = {
+        $inc: { numberOfVolunteer: 1 },
+      };
+      const requestQuery = { _id: new ObjectId(req.query.id) };
+      const updatePost = await volunteerPostCollection.updateOne(
+        requestQuery,
+        updateDoc
+      );
+      const id = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await volunteerRequestCollection.deleteOne(query);
       res.send(result);
     });
   } finally {
