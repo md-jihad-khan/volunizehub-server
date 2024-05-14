@@ -72,15 +72,32 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
     // all volunteer need post api
     app.get("/allPosts", async (req, res) => {
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
       const search = req.query.search;
       let query = {
         title: { $regex: search, $options: "i" },
       };
-      const cursor = volunteerPostCollection.find(query).sort({ deadline: 1 });
+      const cursor = volunteerPostCollection
+        .find(query)
+        .skip(page * size)
+        .limit(size)
+        .sort({ deadline: 1 });
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    // Get all post data count from db
+    app.get("/post-count", async (req, res) => {
+      const search = req.query.search;
+      let query = {
+        title: { $regex: search, $options: "i" },
+      };
+      const count = await volunteerPostCollection.countDocuments(query);
+      res.send({ count });
     });
     // getting users post
     app.get("/post", verifyToken, async (req, res) => {
