@@ -12,7 +12,6 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
       "https://volunizehub.web.app",
       "https://volunizehub.firebaseapp.com",
     ],
@@ -83,14 +82,36 @@ async function run() {
       const size = parseInt(req.query.size);
       const page = parseInt(req.query.page) - 1;
       const search = req.query.search;
+      const sortField = req.query.sortField || "deadline"; // Default sorting field
+      const sortOrder = req.query.sortOrder === "desc" ? -1 : 1; // Default to ascending
+
+      // Add your filter parameters
+      const category = req.query.category;
+      const minVolunteers = parseInt(req.query.minVolunteers);
+      const maxVolunteers = parseInt(req.query.maxVolunteers);
+
       let query = {
         title: { $regex: search, $options: "i" },
       };
+
+      // Add filters to the query
+      if (category) {
+        query.category = { $regex: category, $options: "i" };
+      }
+      if (minVolunteers) {
+        query.numberOfVolunteer = { $gte: minVolunteers };
+      }
+      if (maxVolunteers) {
+        query.numberOfVolunteer = query.numberOfVolunteer || {};
+        query.numberOfVolunteer.$lte = maxVolunteers;
+      }
+
       const cursor = volunteerPostCollection
         .find(query)
         .skip(page * size)
         .limit(size)
-        .sort({ deadline: 1 });
+        .sort({ [sortField]: sortOrder });
+
       const result = await cursor.toArray();
       res.send(result);
     });
